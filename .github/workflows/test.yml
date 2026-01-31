@@ -33,13 +33,30 @@ jobs:
       - name: Install Playwright browsers
         run: mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
 
-      - name: Run tests
-        run: mvn test -Dheadless=true
+      - name: Verify Playwright installation
+        run: |
+          echo "=== Checking Playwright browsers ==="
+          ls -la ~/.cache/ms-playwright/ || echo "Playwright cache not found"
 
-      - name: List test reports
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: |
+          mvn test -Dheadless=true 2>&1 | tee test-output.log
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Display test output on failure
+        if: steps.tests.outcome == 'failure'
+        run: |
+          echo "=== Full test output ==="
+          cat test-output.log
+
+      - name: List target directory
         if: always()
         run: |
-          echo "=== Checking for test reports ==="
+          echo "=== Target directory contents ==="
+          ls -la target/ || echo "No target directory"
+          echo "=== Surefire reports ==="
           ls -la target/surefire-reports/ || echo "No surefire-reports directory"
 
       - name: Upload test reports
@@ -60,3 +77,7 @@ jobs:
           include_passed: true
           detailed_summary: true
           check_name: 'Test Results'
+
+      - name: Fail if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
