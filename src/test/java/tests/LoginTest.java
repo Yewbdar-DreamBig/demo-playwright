@@ -67,5 +67,5 @@ public class LoginTest extends BaseTest {
         Assert.assertTrue(loginPage.isLoginPageDisplayed(),
             "Should remain on login page with empty credentials");
     
-    
+    }
 }
